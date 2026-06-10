@@ -28,7 +28,9 @@ class UserFactory extends Factory
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
-             'phone'=>'7' . fake()->randomElement(['71','72']) . fake()->numberBetween(10000000,9999999),
+            // 👈 Cambiado a 'telefono' y ajustado el rango numérico para evitar errores de longitud
+            'telefono' => '7' . fake()->randomElement(['71', '72']) . fake()->numberBetween(1000000, 9999999),
+            'foto' => 'default.png', // 👈 Agregado para que los usuarios del seeder tengan una foto base
             'remember_token' => Str::random(10),
         ];
     }

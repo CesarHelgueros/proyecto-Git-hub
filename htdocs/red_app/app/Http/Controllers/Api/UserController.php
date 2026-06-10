@@ -3,82 +3,61 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use App\Http\Resources\User\UserCollection;
 use App\Models\User;
-use Illuminate\Http\JsonResponse;
-use App\Http\Resources\User\UserResource;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 
 class UserController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    // 1. INDEX: Listar todos los usuarios
     public function index()
     {
-        return UserCollection::make(User::all());
+        $users = User::all();
+        return response()->json($users, 200);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+    // 2. STORE: Guardar un nuevo usuario con los campos solicitados
     public function store(Request $request)
     {
-        // Validamos los datos de entrada
-        $data = $request->validate([
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8',
+        // Validar los datos de entrada
+        $validator = Validator::make($request->all(), [
+            'nombre'   => 'required|string|max:255',
+            'correo'   => 'required|string|email|max:255|unique:users,email',
+            'telefono' => 'required|string|max:20',
+            'password' => 'required|string|min:6',
+            'foto'     => 'nullable|string|max:255', // Guardamos el nombre o ruta de la foto
         ]);
 
-        // Encriptamos la contraseña antes de guardar
-        $data['password'] = Hash::make($data['password']);
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 400);
+        }
 
-        $user = User::create($data);
-
-        return UserResource::make($user)
-            ->additional(['message' => 'Usuario creado con éxito']);
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        $user = User::findOrFail($id);
-        return UserResource::make($user);
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-       $user = User::findOrFail($id);
-        $validatedData = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
-            'phone' => 'required|string|max:20',
+        // Crear el usuario mapeando tus campos a las columnas de la BD
+        $user = User::create([
+            'name'     => $request->nombre,
+            'email'    => $request->correo,
+            'telefono' => $request->telefono,
+            'foto'     => $request->foto ?? 'default.png',
+            'password' => Hash::make($request->password),
         ]);
 
-        $user->update($validatedData);
-        return UserResource::make($user);
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        $user = User::findOrFail($id); 
-        $userName = $user->name;
-        
-        $user->delete();
-
+        // Retornamos el usuario creado. Laravel ya incluirá el "created_at" (timestamp) aquí.
         return response()->json([
-            'message' => "User '{$userName}' deleted successfully",
-        ], 200);
+            'message' => 'Usuario guardado exitosamente',
+            'user' => $user
+        ], 201);
+    }
+
+    // 3. SHOW: Mostrar un usuario específico por su ID
+    public function show($id)
+    {
+        $user = User::find($id);
+
+        if (!$user) {
+            return response()->json(['message' => 'Usuario no encontrado'], 404);
+        }
+
+        return response()->json($user, 200);
     }
 }
