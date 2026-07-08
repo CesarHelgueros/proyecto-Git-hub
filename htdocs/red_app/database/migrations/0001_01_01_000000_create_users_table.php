@@ -14,15 +14,13 @@ return new class extends Migration
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
-            $table->string('telefono');          // 👈 Cambiado de phone a telefono
-            $table->string('foto')->nullable();  // 👈 Agregada la columna foto
-            $table->rememberToken();
-            $table->timestamps();
+            $table->string('email')->unique()->nullable(); // 👈 Opcional
+            $table->string('phone');                       // 👈 Requerido
+            $table->string('image')->nullable();           // 👈 Coincide con tu captura
+            $table->timestamps();                          // 👈 Automático (created_at y updated_at)
         });
 
+        // Tablas requeridas internamente por Laravel
         Schema::create('password_reset_tokens', function (Blueprint $table) {
             $table->string('email')->primary();
             $table->string('token');
